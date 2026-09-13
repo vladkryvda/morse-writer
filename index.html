@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="CyberMorse">
-  <title>RETRO TERMINAL INPUT</title>
+  <title>CYBER_TELEGRAPH</title>
   <style>
     * {
       box-sizing: border-box;
@@ -22,75 +21,64 @@
       height: 100%;
       background-color: #000000;
       color: #00ff66;
-      font-family: "Courier New", Courier, ui-monospace, monospace;
+      font-family: "Courier New", Courier, monospace;
       overflow: hidden;
       touch-action: none;
     }
 
-    /* Ефект ЕПТ-монітора (Scanlines) */
-    .crt-overlay {
+    /* Ретро-сканлайни монітора */
+    .crt {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
-                  linear-gradient(90deg, rgba(0, 255, 102, 0.03), rgba(0, 0, 0, 0.1), rgba(0, 255, 102, 0.03));
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                  linear-gradient(90deg, rgba(0, 255, 102, 0.02), rgba(0, 0, 0, 0.1), rgba(0, 255, 102, 0.02));
       background-size: 100% 3px, 6px 100%;
       pointer-events: none;
       z-index: 20;
     }
 
-    /* Сенсорний шар */
-    #touchpad {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 10;
-      display: flex;
-    }
-    .zone { flex: 1; height: 100%; }
-
     /* Термінал */
     #terminal {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      padding: 20px 15px;
+      padding: 24px 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       z-index: 5;
-      text-shadow: 0 0 6px rgba(0, 255, 102, 0.6);
+      text-shadow: 0 0 6px rgba(0, 255, 102, 0.5);
     }
 
-    .term-header {
-      font-size: 12px;
-      color: #009933;
-      line-height: 1.4;
-      border-bottom: 1px dashed #005522;
-      padding-bottom: 8px;
+    .header {
+      font-size: 11px;
+      color: #008833;
+      border-bottom: 1px solid #004411;
+      padding-bottom: 6px;
+      letter-spacing: 1px;
     }
 
-    #console-view {
+    #stream-view {
       flex: 1;
-      margin-top: 15px;
+      margin-top: 20px;
       font-size: 26px;
-      line-height: 1.4;
+      line-height: 1.5;
       word-break: break-all;
-      overflow-y: hidden;
     }
 
-    /* Активна буква під час тапу */
-    .active-char {
+    /* Активна буква, яка зараз формується */
+    .morph-char {
       background: #00ff66;
       color: #000000;
-      padding: 0 2px;
+      padding: 0 3px;
+      font-weight: bold;
       text-shadow: none;
     }
 
-    /* Миготливий ретро-курсор */
     .cursor {
       display: inline-block;
       width: 14px;
       background-color: #00ff66;
       animation: blink 0.8s infinite;
-      vertical-align: baseline;
     }
 
     @keyframes blink {
@@ -98,23 +86,24 @@
       50%, 100% { opacity: 0; }
     }
 
-    /* Панель живого відслідковування */
-    .hud {
-      font-size: 14px;
-      color: #008833;
-      border-top: 1px dashed #005522;
+    .footer {
+      border-top: 1px solid #004411;
       padding-top: 10px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #00aa44;
     }
 
-    .live-code {
-      font-size: 20px;
+    .morse-code {
+      font-size: 22px;
       color: #00ff66;
       letter-spacing: 4px;
+      font-weight: bold;
     }
 
-    /* Невидимий чекбокс для активації Taptic Engine на iOS */
+    /* Спеціальний перемикач iOS для Taptic Engine */
     #haptic-holder {
       position: absolute;
       top: -100px;
@@ -125,50 +114,39 @@
 </head>
 <body>
 
-  <div class="crt-overlay"></div>
+  <div class="crt"></div>
 
   <div id="haptic-holder">
     <label><input type="checkbox" switch id="iosHaptic"></label>
   </div>
 
   <div id="terminal">
-    <div class="term-header">
-      [SYS_READY] LIVE_MORSE_PROTOCOL // V3.2<br>
-      STATUS: DIRECT_STREAM &nbsp;|&nbsp; SPEED: REALTIME
+    <div class="header">
+      [TACTILE_TELEGRAPH] // READY<br>
+      TAP = [ · ] &nbsp;|&nbsp; HOLD(0.2s) = [ — ]
     </div>
 
-    <div id="console-view">
-      <span id="committed-text">> </span><span id="current-char" class="active-char" style="display:none;"></span><span class="cursor">&nbsp;</span>
+    <div id="stream-view">
+      <span id="text">> </span><span id="active" class="morph-char" style="display:none;"></span><span class="cursor">&nbsp;</span>
     </div>
 
-    <div class="hud">
-      <div>CODE: <span id="morse-seq" class="live-code">_</span></div>
-      <div id="status-msg">READY</div>
+    <div class="footer">
+      <div>BUF: <span id="code" class="morse-code">_</span></div>
+      <div id="status">IDLE</div>
     </div>
-  </div>
-
-  <!-- Сенсорний екран -->
-  <div id="touchpad">
-    <div class="zone" id="zone-left"></div>
-    <div class="zone" id="zone-right"></div>
   </div>
 
   <script>
-    // Дерево Морзе (Символ змінюється миттєво з кожним тапом)
-    const MORSE_TREE = {
-      // 1 рівень
+    // Дерево символів
+    const MORSE = {
       ".": "E", "-": "T",
-      // 2 рівень
       "..": "I", ".-": "A", "-.": "N", "--": "M",
-      // 3 рівень
       "...": "S", "..-": "U", ".-.": "R", ".--": "W",
       "-..": "D", "-.-": "K", "--.": "G", "---": "O",
-      // 4 рівень
       "....": "H", "...-": "V", "..-.": "F",
       ".-..": "L", ".--.": "P", ".---": "J",
       "-...": "B", "-..-": "X", "-.-.": "C", "-.--": "Y",
       "--..": "Z", "--.-": "Q",
-      // Цифри
       ".----": "1", "..---": "2", "...--": "3", "....-": "4", ".....": "5",
       "-....": "6", "--...": "7", "---..": "8", "----.": "9", "-----": "0"
     };
@@ -177,168 +155,170 @@
     let committed = "> ";
     let activeChar = "";
     let commitTimer = null;
-    let spaceTimer = null;
 
-    const COMMIT_TIMEOUT = 500; // 0.5 с паузи — буква затверджується
-    const SPACE_TIMEOUT = 1600;  // 1.6 с паузи — додається пробіл
+    const HOLD_THRESHOLD = 200; // 200 мс — поріг між крапкою і тире
+    const COMMIT_DELAY = 500;   // 500 мс паузи — буква фіксується
 
-    // Елементи
-    const committedEl = document.getElementById("committed-text");
-    const currentCharEl = document.getElementById("current-char");
-    const morseSeqEl = document.getElementById("morse-seq");
-    const statusMsgEl = document.getElementById("status-msg");
+    const textEl = document.getElementById("text");
+    const activeEl = document.getElementById("active");
+    const codeEl = document.getElementById("code");
+    const statusEl = document.getElementById("status");
     const hapticSwitch = document.getElementById("iosHaptic");
 
-    // Звук старого термінала (клацання реле)
+    // Синтезатор звуку для тактильного клацання
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playTerminalClick(freq = 600, duration = 0.015) {
+    function clickSound(freq = 600, dur = 0.015) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = "sine";
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + dur);
     }
 
-    // Вібрація (Taptic Engine + Web)
-    function triggerHaptic(type = "click") {
-      if (navigator.vibrate) {
-        navigator.vibrate(type === "commit" ? [25, 40, 25] : 30);
-      }
+    // Вібрація
+    function triggerHaptic(strong = false) {
+      if (navigator.vibrate) navigator.vibrate(strong ? 50 : 25);
       if (hapticSwitch) hapticSwitch.click();
-      playTerminalClick(type === "commit" ? 400 : 800);
+      clickSound(strong ? 350 : 750, strong ? 0.03 : 0.015);
     }
 
-    // Миттєва реєстрація тапу
-    function handleInput(symbol) {
+    // Додавання символу (.) чи (-)
+    function addSymbol(sym) {
       clearTimeout(commitTimer);
-      clearTimeout(spaceTimer);
 
-      buffer += symbol;
-      activeChar = MORSE_TREE[buffer] || "?";
+      buffer += sym;
+      activeChar = MORSE[buffer] || "?";
 
-      // МИТТЄВЕ відображення на курсорі
-      currentCharEl.style.display = "inline-block";
-      currentCharEl.innerText = activeChar;
-      morseSeqEl.innerText = buffer;
-      statusMsgEl.innerText = "STREAMING...";
+      // Миттєве відображення літери
+      activeEl.style.display = "inline-block";
+      activeEl.innerText = activeChar;
+      codeEl.innerText = buffer;
+      statusEl.innerText = "TYPING...";
 
-      triggerHaptic("click");
-
-      // Таймер фіксації: якщо користувач зупинився — затверджуємо літеру
-      commitTimer = setTimeout(() => {
-        commitCurrentChar();
-      }, COMMIT_TIMEOUT);
+      // Запуск таймера фіксації літери
+      commitTimer = setTimeout(commitLetter, COMMIT_DELAY);
     }
 
-    // Затвердження символу
-    function commitCurrentChar() {
+    // Фіксація поточної літери
+    function commitLetter() {
       if (!activeChar) return;
 
       committed += activeChar;
-      committedEl.innerText = committed;
-      
-      // Скидання буфера
+      textEl.innerText = committed;
+
       buffer = "";
       activeChar = "";
-      currentCharEl.style.display = "none";
-      currentCharEl.innerText = "";
-      morseSeqEl.innerText = "_";
-      statusMsgEl.innerText = "LOCKED";
+      activeEl.style.display = "none";
+      codeEl.innerText = "_";
+      statusEl.innerText = "SAVED";
 
-      triggerHaptic("commit");
-
-      // Запуск таймера для пробілу після завершення літери
-      spaceTimer = setTimeout(() => {
-        committed += " ";
-        committedEl.innerText = committed;
-        statusMsgEl.innerText = "[SPACE]";
-        playTerminalClick(250, 0.03);
-      }, SPACE_TIMEOUT - COMMIT_TIMEOUT);
+      triggerHaptic(true);
     }
 
-    // Обробка жестів і дотиків
+    // --- ОБРОБКА ДОТИКІВ (БЕЗ ЗБОЇВ) ---
+    let touchTimer = null;
+    let isHold = false;
     let startX = 0;
     let startY = 0;
-    let startTime = 0;
+    let hasMoved = false;
 
     window.addEventListener("touchstart", (e) => {
-      const touch = e.touches[0];
-      startX = touch.clientX;
-      startY = touch.clientY;
-      startTime = Date.now();
+      // Працюємо строго з 1 головним дотиком
+      if (e.touches.length > 1) return;
 
-      // Якщо доторкнулись 2 пальцями одразу — це ТИРЕ (-) будь-де
-      if (e.touches.length === 2) {
-        handleInput("-");
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      hasMoved = false;
+      isHold = false;
+
+      // Запускаємо таймер затискання (тире)
+      touchTimer = setTimeout(() => {
+        if (!hasMoved) {
+          isHold = true;
+          triggerHaptic(true); // ЧІТКИЙ СИГНАЛ ПІД ПАЛЕЦЬ: ТИРЕ ЗАСХВАЛЕНО
+          addSymbol("-");
+        }
+      }, HOLD_THRESHOLD);
+    }, { passive: false });
+
+    window.addEventListener("touchmove", (e) => {
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+
+      // Якщо палець посунувся далі 20px — це жест (скасовуємо тап/тире)
+      if (Math.hypot(dx, dy) > 20) {
+        hasMoved = true;
+        clearTimeout(touchTimer);
       }
     }, { passive: false });
 
     window.addEventListener("touchend", (e) => {
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - startX;
-      const deltaY = touch.clientY - startY;
-      const duration = Date.now() - startTime;
+      clearTimeout(touchTimer);
 
-      // 1. Свайпи
-      if (Math.abs(deltaX) > 40 || Math.abs(deltaY) > 40) {
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-          if (deltaX < -40) {
-            // Свайп ВЛІВО: Backspace
+      // Якщо це був свайп
+      if (hasMoved) {
+        const t = e.changedTouches[0];
+        const dx = t.clientX - startX;
+        const dy = t.clientY - startY;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 40) {
+            // Свайп вправо: ПРОБІЛ
+            commitLetter();
+            committed += " ";
+            textEl.innerText = committed;
+            statusEl.innerText = "[SPACE]";
+            triggerHaptic(false);
+          } else if (dx < -40) {
+            // Свайп вліво: BACKSPACE
             if (buffer.length > 0) {
               buffer = "";
               activeChar = "";
-              currentCharEl.style.display = "none";
-              morseSeqEl.innerText = "_";
+              activeEl.style.display = "none";
+              codeEl.innerText = "_";
             } else if (committed.length > 2) {
               committed = committed.slice(0, -1);
-              committedEl.innerText = committed;
+              textEl.innerText = committed;
             }
-            statusMsgEl.innerText = "DEL";
-            triggerHaptic();
-          } else if (deltaX > 40) {
-            // Свайп ВПРАВО: Пробіл
-            committed += " ";
-            committedEl.innerText = committed;
-            statusMsgEl.innerText = "SPACE";
-            triggerHaptic();
+            statusEl.innerText = "DELETE";
+            triggerHaptic(false);
           }
         } else {
-          if (deltaY < -40) {
-            // Свайп ВГОРУ: Скопіювати текст
-            const textToCopy = committed.replace(/^>\s*/, '');
-            if (navigator.clipboard) navigator.clipboard.writeText(textToCopy);
-            statusMsgEl.innerText = "COPIED!";
-            triggerHaptic("commit");
-          } else if (deltaY > 40) {
-            // Свайп ВНИЗ: Очистити термінал
+          if (dy < -40) {
+            // Свайп вгору: Скопіювати текст
+            const raw = committed.replace(/^>\s*/, '');
+            if (navigator.clipboard) navigator.clipboard.writeText(raw);
+            statusEl.innerText = "COPIED!";
+            triggerHaptic(true);
+          } else if (dy > 40) {
+            // Свайп вниз: Очистити все
             committed = "> ";
             buffer = "";
             activeChar = "";
-            currentCharEl.style.display = "none";
-            committedEl.innerText = committed;
-            morseSeqEl.innerText = "_";
-            statusMsgEl.innerText = "CLEARED";
-            triggerHaptic();
+            activeEl.style.display = "none";
+            textEl.innerText = committed;
+            codeEl.innerText = "_";
+            statusEl.innerText = "CLEARED";
+            triggerHaptic(false);
           }
         }
         return;
       }
 
-      // 2. Тапи одним пальцем
-      if (duration < 350) {
-        const screenWidth = window.innerWidth;
-        if (touch.clientX < screenWidth / 2) {
-          handleInput("."); // Ліва половина = Крапка
-        } else {
-          handleInput("-"); // Права половина = Тире
-        }
-      }
+      // Якщо тире вже спрацювало від затискання — нічого не робимо
+      if (isHold) return;
+
+      // Інакше це був короткий швидкий тап — реєструємо КРАПКУ
+      triggerHaptic(false);
+      addSymbol(".");
     }, { passive: false });
   </script>
 </body>
